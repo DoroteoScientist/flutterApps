@@ -1,0 +1,239 @@
+-- Crear la base de datos
+CREATE DATABASE restaurante;
+USE restaurante;
+
+-- Tabla EMPLEADO
+CREATE TABLE empleado (
+    idEmpleado INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(40) NOT NULL,
+    apellido VARCHAR(40) NOT NULL,
+    curp VARCHAR(18) UNIQUE NOT NULL,
+    rfc VARCHAR(13) UNIQUE NOT NULL,
+    sueldo DECIMAL(8,2),
+    puesto VARCHAR(100),
+    telefono VARCHAR(10),
+    horario VARCHAR(100),
+    fechaIngreso DATE
+);
+
+-- Tabla PROVEEDOR
+CREATE TABLE proveedor (
+    idProveedor INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    telefono VARCHAR(10),
+    direccion VARCHAR(100),
+    email VARCHAR(50)
+);
+
+-- Tabla INSUMO
+CREATE TABLE insumo (
+    idInsumo INT AUTO_INCREMENT PRIMARY KEY,
+    idProveedor INT NOT NULL,
+    nombre VARCHAR(50) NOT NULL,
+    costo DECIMAL(8,2) NOT NULL,
+    CONSTRAINT fk_proveedor FOREIGN KEY (idProveedor) REFERENCES proveedor(idProveedor)
+);
+
+-- Tabla CLIENTE
+CREATE TABLE cliente (
+    idCliente INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    direccion VARCHAR(100),
+    telefono CHAR(10),
+    email VARCHAR(100) UNIQUE
+);
+
+-- Tabla RESERVACION
+CREATE TABLE reservacion (
+    idReservacion INT AUTO_INCREMENT PRIMARY KEY,
+    idCliente INT NOT NULL,
+    fechaReservacion DATETIME NOT NULL,
+    horaReservacion VARCHAR(10) NOT NULL,
+    CONSTRAINT fk_cliente FOREIGN KEY (idCliente) REFERENCES cliente(idCliente)
+);
+
+-- Tabla DETALLE_PRODUCTO
+CREATE TABLE detalleProducto (
+    idInsumo INT NOT NULL,
+    idProducto INT NOT NULL,
+    cantidad INT NOT NULL,
+    PRIMARY KEY (idInsumo, idProducto),
+    CONSTRAINT fk_detalle_producto1 FOREIGN KEY (idInsumo) REFERENCES insumo(idInsumo),
+    CONSTRAINT fk_detalle_p2 FOREIGN KEY (idProducto) REFERENCES producto(idProducto)
+);
+
+
+-- Tabla CATEGORIA
+CREATE TABLE categoria (
+    idCategoria INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(30) NOT NULL,
+    descripcion VARCHAR(100)
+);
+
+-- Tabla PRODUCTO
+CREATE TABLE producto (
+    idProducto INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(70) NOT NULL,
+    precio NUMERIC(8,2) NOT NULL,
+    idCategoria INT NOT NULL,
+    CONSTRAINT fk_producto FOREIGN KEY (idCategoria) REFERENCES categoria(idCategoria)
+);
+
+-- Tabla ORDEN
+CREATE TABLE orden (
+    idOrden INT AUTO_INCREMENT PRIMARY KEY,
+    idCliente INT NOT NULL,
+    fecha DATETIME NOT NULL,
+    idMesa INT NOT NULL,
+    idEmpleado INT NOT NULL,
+    CONSTRAINT fk_orden1 FOREIGN KEY (idCliente) REFERENCES cliente(idCliente),
+    CONSTRAINT fk_orden2 FOREIGN KEY (idMesa) REFERENCES mesa(idMesa),
+    CONSTRAINT fk_orden3 FOREIGN KEY (idEmpleado) REFERENCES empleado(idEmpleado)
+);
+
+-- Tabla CUENTA
+CREATE TABLE cuenta (
+    idCuenta INT AUTO_INCREMENT PRIMARY KEY,
+    idOrden INT NOT NULL,
+    metodoPago VARCHAR(50),
+    total DECIMAL(10,2),
+    cerrada BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (idOrden) REFERENCES orden(idOrden)
+);
+
+-- Tabla DETALLE_ORDEN
+CREATE TABLE detalleOrden (
+    idProducto INT NOT NULL,
+    idOrden INT NOT NULL,
+    cantidad INT NOT NULL,
+    PRIMARY KEY (idProducto, idOrden),
+    CONSTRAINT fk_detalle_o1 FOREIGN KEY (idProducto) REFERENCES producto(idProducto),
+    CONSTRAINT fk_detalle_o2 FOREIGN KEY (idOrden) REFERENCES orden(idOrden)
+);
+
+-- Tabla RESERVACION_MESA
+CREATE TABLE reservacionMesa (
+    idReservacion INT NOT NULL,
+    idMesa INT NOT NULL,
+    comentarios VARCHAR(100),
+    PRIMARY KEY (idReservacion, idMesa),
+    CONSTRAINT fk_reservacion FOREIGN KEY (idReservacion) REFERENCES reservacion(idReservacion),
+    CONSTRAINT fk_mesa FOREIGN KEY (idMesa) REFERENCES mesa(idMesa)
+);
+
+
+-- Tabla MESA
+CREATE TABLE mesa (
+    idMesa INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(30),
+    capacidad INT NOT NULL
+);
+
+
+create view ventaDia
+SELECT 
+    DATE(o.fecha) AS dia,
+    COUNT(DISTINCT o.id_orden) AS total_ordenes,
+    SUM(p.precio * do.cantidad) AS total_ventas
+FROM Orden o
+JOIN DetOrden do ON o.id_orden = do.id_orden
+JOIN Producto p ON do.id_producto = p.id_producto
+GROUP BY DATE(o.fecha)
+ORDER BY dia DESC;
+
+
+SELECT 
+    e.nombre AS empleado,
+    COUNT(DISTINCT o.id_orden) AS ordenes_realizadas,
+    SUM(p.precio * do.cantidad) AS total_vendido
+FROM Empleados e
+JOIN Orden o ON e.id_empleado = o.id_empleado
+JOIN DetOrden do ON o.id_orden = do.id_orden
+JOIN Producto p ON do.id_producto = p.id_producto
+GROUP BY e.nombre
+ORDER BY total_vendido DESC
+LIMIT 1;
+
+CREATE VIEW ventaDia AS
+SELECT 
+    DATE(o.fecha) AS dia,
+    COUNT(DISTINCT o.idOrden) AS total_ordenes,
+    SUM(p.precio * do.cantidad) AS total_ventas
+FROM orden o
+JOIN detalleOrden do ON o.idOrden = do.idOrden
+JOIN producto p ON do.idProducto = p.idProducto
+GROUP BY DATE(o.fecha)
+ORDER BY dia DESC;
+
+CREATE VIEW mejorEmpleado AS
+SELECT 
+    e.idempleado AS Id,
+    CONCAT(e.nombre, ' ', e.apellido) AS empleado,
+    COUNT(DISTINCT o.idOrden) AS ordenes_realizadas,
+    SUM(p.precio * do.cantidad) AS total_vendido
+FROM empleado e
+JOIN orden o ON e.idEmpleado = o.idEmpleado
+JOIN detalleOrden do ON o.idOrden = do.idOrden
+JOIN producto p ON do.idProducto = p.idProducto
+GROUP BY empleado
+ORDER BY total_vendido DESC
+LIMIT 1;
+
+CREATE VIEW bestEmployee AS
+SELECT 
+    e.idEmpleado AS id,
+    CONCAT(e.nombre, ' ', e.apellido) AS empleado,
+    e.puesto,
+    COUNT(DISTINCT o.idOrden) AS ordenes_realizadas,
+    SUM(p.precio * do.cantidad) AS total_vendido,
+    ROUND(SUM(p.precio * do.cantidad) / COUNT(DISTINCT o.idOrden), 2) AS promedio_por_orden,
+    MAX(o.fecha) AS ultima_venta
+FROM empleado e
+JOIN orden o ON e.idEmpleado = o.idEmpleado
+JOIN detalleOrden do ON o.idOrden = do.idOrden
+JOIN producto p ON do.idProducto = p.idProducto
+GROUP BY e.idEmpleado, e.nombre, e.apellido, e.puesto
+ORDER BY total_vendido DESC
+LIMIT 1;
+
+"""
+
+        script_insercion = """
+-- Inserciones para poblar las tablas con datos de ejemplo
+
+-- Empleado
+INSERT INTO empleado (nombre, apellido, curp, rfc, sueldo, puesto, telefono, horario, fechaIngreso)
+VALUES 
+('Carlos', 'Ramírez', 'CARR010101HDFRRN01', 'CAR010101AAA', 12000.00, 'Mesero', '5512345678', 'Matutino', '2023-05-10'),
+('Laura', 'Gómez', 'GOLA900101MDFMRR01', 'GOL900101BBB', 13500.00, 'Chef', '5512345679', 'Vespertino', '2022-03-12');
+
+-- Proveedor
+INSERT INTO proveedor (nombre, telefono, direccion, email)
+VALUES 
+('Alimentos SA', '5598765432', 'Calle 123, CDMX', 'contacto@alimentos.com'),
+('Verduras Sano', '5587654321', 'Av. Verde 456, CDMX', 'ventas@verdurassano.com');
+
+-- Insumo
+INSERT INTO insumo (idProveedor, nombre, costo)
+VALUES 
+(1, 'Carne', 150.00),
+(2, 'Lechuga', 30.00);
+
+-- Mesa
+INSERT INTO mesa (nombre, capacidad)
+VALUES 
+('Mesa A1', 4),
+('Mesa B2', 2);
+
+-- Cliente
+INSERT INTO cliente (nombre, direccion, telefono, email)
+VALUES 
+('Juan Pérez', 'Av. Reforma 100', '5512345678', 'juanperez@mail.com');
+
+-- Categoria
+INSERT INTO categoria (nombre, descripcion)
+VALUES ('Bebidas', 'Líquidos refrescantes');
+
+-- Producto
+INSERT INTO producto (nombre, precio, idCategoria)
+VALUES ('Refresco', 25.00, 1);
