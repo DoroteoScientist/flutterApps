@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
+import 'package:flutter_application_1/utils/entity.dart';
+import 'package:flutter_application_1/utils/my_button.dart';
+
 class ChallengeScreen extends StatelessWidget {
   const ChallengeScreen({super.key});
 
@@ -71,90 +74,91 @@ class ChallengeScreen extends StatelessWidget {
     );
   }
 }
-
 class JuiceWidget extends StatelessWidget {
   final JuiceEntity juice;
+  final VoidCallback? onTap;
 
-  const JuiceWidget({super.key, required this.juice});
+  const JuiceWidget({super.key, required this.juice, this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final textStyle = const TextStyle(
+      color: Colors.white,
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+    );
     return AspectRatio(
       aspectRatio: 1.25,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final topPadding = constraints.maxHeight * 0.2;
+          final leftPadding = constraints.maxWidth * 0.1;
           final imageWidth = constraints.maxWidth * 0.35;
-          return Stack(
-            children: [
-              Container(
-                margin: EdgeInsets.only(top: topPadding),
-                decoration: BoxDecoration(
-                  color: juice.color,
-                  borderRadius: BorderRadius.circular(24),
+
+          return GestureDetector(
+            onTap: onTap,
+            child: Stack(
+              children: [
+                Container(
+                  margin: EdgeInsets.only(top: topPadding),
+                  decoration: BoxDecoration(
+                    color: juice.color,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                 ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(top: topPadding, left: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            juice.name,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "\$${juice.price}",
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                        ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: topPadding, left: leftPadding),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              juice.name,
+                              style: textStyle.copyWith(fontSize: 20),
+                            ),
+                            RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '\$',
+                                    style: textStyle.copyWith(fontSize: 16),
+                                  ),
+                                  TextSpan(
+                                    text: juice.price,
+                                    style: textStyle.copyWith(
+                                      fontSize: 30,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              height: 32,
+                              width: 80,
+                              child: MyButton(
+                                text: 'Buy Now',
+                                textColor: juice.color,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(
-                    width: imageWidth,
-                    child: Image(image: juice.image),
-                  ),
-                ],
-              ),
-            ],
+                    SizedBox(
+                      width: imageWidth,
+                        child: Image(image: juice.image, fit: BoxFit.contain),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           );
         },
       ),
     );
   }
 }
-
-class JuiceEntity {
-  final String name;
-  final AssetImage image;
-  final String price;
-  final Color color;
-
-  JuiceEntity({
-    required this.name,
-    required this.image,
-    required this.price,
-    required this.color,
-  });
-}
-
-final juiceList = [
-  JuiceEntity(
-    name: 'Besom Yellow Juice',
-    image: AssetImage('assets/rele.png'),
-    price: '19.99',
-    color: const Color.fromARGB(255, 14, 12, 129),
-  ),
-  JuiceEntity(
-    name: 'Besom Orange Juice',
-    image: AssetImage('assets/tarjeta.png'),
-    price: '25.99',
-    color: const Color.fromARGB(255, 14, 153, 153),
-  ),
-];

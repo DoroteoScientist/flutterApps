@@ -32,6 +32,7 @@ class MyApp extends StatelessWidget {
             "/api" : (context) => const PopularScreen(),
             "/detail" : (context) => const DetailPopularMovieScreen(),
             '/favorites': (context) => const FavoritesScreen(),
+          
             },
         );
       }

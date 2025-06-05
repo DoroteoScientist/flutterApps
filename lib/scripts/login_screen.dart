@@ -17,7 +17,7 @@ class  LoginScreenState extends State<LoginScreen> {
     return Scaffold(
         body : Container
         (
-         
+          
           width: MediaQuery.of(context).size.height,
           height: MediaQuery.of(context).size.height,//para esto se recata al resolucion de la pantalla
           //se agarra el valor del contexto, y se establece el tamano por lo menos de la altura
